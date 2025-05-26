@@ -9,6 +9,9 @@ import 'uno.css'
 import App from './App.vue'
 import router from './router'
 
+// 全局样式
+import './styles/global.css'
+
 const app = createApp(App)
 
 // 注册 Element Plus 图标
