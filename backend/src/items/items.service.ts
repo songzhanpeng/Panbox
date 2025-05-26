@@ -9,31 +9,67 @@ export class ItemsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createItemDto: CreateItemDto, userId: number = 1) {
-    const { tagIds, ...itemData } = createItemDto;
+    try {
+      const { tagIds, purchaseDate, ...itemData } = createItemDto;
 
-    const item = await this.prisma.item.create({
-      data: {
-        ...itemData,
-        userId,
-        tags: tagIds
-          ? {
-              create: tagIds.map((tagId) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        category: true,
-        tags: {
-          include: {
-            tag: true,
+      // 处理购买日期
+      const processedPurchaseDate = purchaseDate ? new Date(purchaseDate) : null;
+
+      // 验证日期是否有效
+      if (purchaseDate && isNaN(processedPurchaseDate?.getTime())) {
+        throw new Error(`无效的购买日期格式: ${purchaseDate}`);
+      }
+
+      // 如果有分类ID，验证分类是否存在
+      if (itemData.categoryId) {
+        const categoryExists = await this.prisma.category.findUnique({
+          where: { id: itemData.categoryId },
+        });
+        if (!categoryExists) {
+          throw new NotFoundException(`分类 ID ${itemData.categoryId} 不存在`);
+        }
+      }
+
+      // 如果有标签ID，验证标签是否存在
+      if (tagIds && tagIds.length > 0) {
+        const existingTags = await this.prisma.tag.findMany({
+          where: { id: { in: tagIds } },
+        });
+        if (existingTags.length !== tagIds.length) {
+          const existingTagIds = existingTags.map(tag => tag.id);
+          const missingTagIds = tagIds.filter(id => !existingTagIds.includes(id));
+          throw new NotFoundException(`标签 ID ${missingTagIds.join(', ')} 不存在`);
+        }
+      }
+
+      const item = await this.prisma.item.create({
+        data: {
+          ...itemData,
+          purchaseDate: processedPurchaseDate,
+          userId,
+          tags: tagIds && tagIds.length > 0
+            ? {
+                create: tagIds.map((tagId) => ({
+                  tag: { connect: { id: tagId } },
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          category: true,
+          tags: {
+            include: {
+              tag: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return item;
+      return item;
+    } catch (error) {
+      console.error('创建物品时发生错误:', error);
+      throw error;
+    }
   }
 
   async findAll(userId: number = 1, categoryId?: number, search?: string) {
@@ -89,10 +125,13 @@ export class ItemsService {
   }
 
   async update(id: number, updateItemDto: UpdateItemDto, userId: number = 1) {
-    const { tagIds, ...itemData } = updateItemDto;
+    const { tagIds, purchaseDate, ...itemData } = updateItemDto;
 
     // 检查物品是否存在
     await this.findOne(id, userId);
+
+    // 处理购买日期
+    const processedPurchaseDate = purchaseDate ? new Date(purchaseDate) : undefined;
 
     // 如果有标签更新，先删除旧的关联
     if (tagIds !== undefined) {
@@ -105,7 +144,8 @@ export class ItemsService {
       where: { id },
       data: {
         ...itemData,
-        tags: tagIds
+        ...(processedPurchaseDate !== undefined && { purchaseDate: processedPurchaseDate }),
+        tags: tagIds && tagIds.length > 0
           ? {
               create: tagIds.map((tagId) => ({
                 tag: { connect: { id: tagId } },
