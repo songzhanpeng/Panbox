@@ -361,6 +361,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getItems, deleteItem } from '@/api/items'
 import { getCategories } from '@/api/categories'
@@ -380,6 +381,7 @@ import {
   RefreshLeft
 } from '@element-plus/icons-vue'
 
+const router = useRouter()
 const loading = ref(false)
 const items = ref<Item[]>([])
 const categories = ref<Category[]>([])
@@ -484,8 +486,7 @@ const resetFilters = () => {
 }
 
 const handleItemClick = (item: Item) => {
-  selectedItem.value = item
-  showDetailDialog.value = true
+  router.push(`/items/${item.id}`)
 }
 
 const handleEdit = (item: Item) => {
