@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表（预留）
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联的物品
+  items Item[]
+
+  @@map("users")
+}
+
+// 分类表
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  color       String?  // 分类颜色标识
+  icon        String?  // 分类图标
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联的物品
+  items Item[]
+
+  @@map("categories")
+}
+
+// 标签表
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  color     String?  // 标签颜色
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 多对多关联物品
+  items ItemTag[]
+
+  @@map("tags")
+}
+
+// 物品表
+model Item {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?  @db.Text
+  price       Decimal? @db.Decimal(10, 2)
+  purchaseDate DateTime?
+  source      String?  // 购买来源
+  brand       String?  // 品牌
+  model       String?  // 型号
+  condition   String?  // 物品状态：新、二手、损坏等
+  location    String?  // 存放位置
+  notes       String?  @db.Text // 备注
+  
+  // 关联用户
+  userId     Int
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 关联分类
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  // 图片 URLs（JSON 数组）
+  imageUrls  Json?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // 多对多关联标签
+  tags ItemTag[]
+
+  @@map("items")
+}
+
+// 物品-标签关联表
+model ItemTag {
+  id     Int @id @default(autoincrement())
+  itemId Int
+  tagId  Int
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, tagId])
+  @@map("item_tags")
+} 
