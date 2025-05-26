@@ -242,7 +242,7 @@ const loadData = async () => {
     // 计算总体统计
     stats.value = {
       totalItems: items.length,
-      totalValue: items.reduce((sum, item) => sum + (item.price || 0), 0),
+      totalValue: items.reduce((sum, item) => sum + Number(item.price || 0), 0),
       totalCategories: categories.length,
       totalTags: tags.length,
     }
@@ -263,7 +263,7 @@ const loadData = async () => {
       if (item.categoryId && categoryMap.has(item.categoryId)) {
         const stat = categoryMap.get(item.categoryId)!
         stat.count++
-        stat.value += item.price || 0
+        stat.value += Number(item.price || 0)
       }
     })
 
