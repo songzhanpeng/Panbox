@@ -1,0 +1,63 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          ## 🎉 Panbox ${{ github.ref_name }} 发布
+
+          ### 📦 Docker 镜像
+          
+          **后端镜像:**
+          ```bash
+          docker pull ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+          ```
+          
+          **前端镜像:**
+          ```bash
+          docker pull ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+          ```
+
+          ### 🚀 快速启动
+          
+          1. 克隆仓库:
+          ```bash
+          git clone https://github.com/${{ github.repository }}.git
+          cd Panbox
+          ```
+          
+          2. 启动服务:
+          ```bash
+          # Windows
+          start.bat
+          
+          # Linux/macOS
+          ./start.sh
+          ```
+
+          ### 📋 更新日志
+          
+          - 请查看提交历史了解详细更改
+
+        draft: false
+        prerelease: false 

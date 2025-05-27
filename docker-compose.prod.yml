@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: panbox-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-panbox}
+      MYSQL_USER: ${MYSQL_USER:-panbox}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-panbox123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - panbox-network
+    restart: unless-stopped
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:RELEASE.2024-10-29T16-01-48Z
+    container_name: panbox-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - panbox-network
+    restart: unless-stopped
+
+  # 后端 NestJS (使用构建好的镜像)
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-username/panbox}/backend:${TAG:-latest}
+    container_name: panbox-backend
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-panbox}:${MYSQL_PASSWORD:-panbox123}@mysql:3306/${MYSQL_DATABASE:-panbox}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-panbox-assets}
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      - mysql
+      - minio
+    networks:
+      - panbox-network
+    restart: unless-stopped
+
+  # 前端 Vue3 (使用构建好的镜像)
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-username/panbox}/frontend:${TAG:-latest}
+    container_name: panbox-frontend
+    environment:
+      VITE_API_BASE_URL: ${API_BASE_URL:-http://localhost:3000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      - backend
+    networks:
+      - panbox-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  minio_data:
+
+networks:
+  panbox-network:
+    driver: bridge 
