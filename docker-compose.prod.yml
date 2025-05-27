@@ -37,7 +37,7 @@ services:
 
   # 后端 NestJS (使用构建好的镜像)
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-your-username/panbox}/backend:${TAG:-latest}
+    image: ghcr.io/songzhanpeng/panbox/backend:latest
     container_name: panbox-backend
     environment:
       DATABASE_URL: mysql://${MYSQL_USER:-panbox}:${MYSQL_PASSWORD:-panbox123}@mysql:3306/${MYSQL_DATABASE:-panbox}
@@ -58,12 +58,12 @@ services:
 
   # 前端 Vue3 (使用构建好的镜像)
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-your-username/panbox}/frontend:${TAG:-latest}
+    image: ghcr.io/songzhanpeng/panbox/frontend:latest
     container_name: panbox-frontend
     environment:
       VITE_API_BASE_URL: ${API_BASE_URL:-http://localhost:3000}
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-9527}:5173"
     depends_on:
       - backend
     networks:
