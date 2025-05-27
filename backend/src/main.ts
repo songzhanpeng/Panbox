@@ -10,7 +10,13 @@ async function bootstrap() {
 
   // 启用 CORS
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: [
+      'http://localhost:5173', 
+      'http://localhost:3000',
+      'http://localhost:9527',  // nginx代理端口
+      /^http:\/\/.*:9527$/,     // 允许任何IP的9527端口
+      /^http:\/\/.*:5173$/,     // 允许任何IP的5173端口
+    ],
     credentials: true,
   });
 
