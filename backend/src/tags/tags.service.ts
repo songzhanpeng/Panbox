@@ -116,7 +116,7 @@ export class TagsService {
       throw new NotFoundException(`标签 ID ${id} 不存在`);
     }
 
-    // 检查是否有物品使用此标签
+    // 检查是否有物品使用此标签（检查所有用户的物品，因为标签是全局共享的）
     console.log(`🔍 [TagsService.remove] 检查标签使用情况 - ID: ${id}`);
     const itemCount = await this.prisma.itemTag.count({
       where: { tagId: id },

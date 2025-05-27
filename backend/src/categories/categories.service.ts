@@ -116,7 +116,7 @@ export class CategoriesService {
       throw new NotFoundException(`分类 ID ${id} 不存在`);
     }
 
-    // 检查是否有物品使用此分类
+    // 检查是否有物品使用此分类（检查所有用户的物品，因为分类是全局共享的）
     console.log(`🔍 [CategoriesService.remove] 检查分类使用情况 - ID: ${id}`);
     const itemCount = await this.prisma.item.count({
       where: { categoryId: id },
