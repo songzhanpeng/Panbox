@@ -10,11 +10,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 用户表（预留）
+// 用户角色枚举
+enum UserRole {
+  USER        // 普通用户
+  ADMIN       // 管理员
+  SUPER_ADMIN // 超级管理员
+}
+
+// 用户表
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   email     String?  @unique
+  password  String   // 加密后的密码
+  role      UserRole @default(USER) // 用户角色
+  isActive  Boolean  @default(true) // 账户是否激活
+  lastLogin DateTime? // 最后登录时间
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

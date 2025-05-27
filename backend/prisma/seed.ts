@@ -1,20 +1,25 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 开始种子数据初始化...');
 
-  // 创建默认用户
+  // 创建超级管理员用户
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   const user = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
     create: {
       username: 'admin',
       email: 'admin@panbox.com',
+      password: hashedPassword,
+      role: UserRole.SUPER_ADMIN,
+      isActive: true,
     },
   });
-  console.log('✅ 创建默认用户:', user);
+  console.log('✅ 创建超级管理员用户:', { username: user.username, email: user.email, role: user.role });
 
   // 创建默认分类
   const categories = [
