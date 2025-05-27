@@ -1,3 +1,22 @@
+// API 统一响应格式
+export interface ApiResponse<T = any> {
+  code: number
+  message: string
+  timestamp: string
+  data: T
+}
+
+// 分页响应格式
+export interface PaginatedResponse<T = any> {
+  items: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 // 物品接口
 export interface Item {
   id: number
@@ -52,6 +71,44 @@ export interface ItemTag {
   itemId: number
   tagId: number
   tag: Tag
+}
+
+// 用户角色枚举
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN'
+}
+
+// 用户接口
+export interface User {
+  id: number
+  username: string
+  email?: string
+  role: UserRole
+  isActive: boolean
+  lastLogin?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// 登录表单
+export interface LoginForm {
+  username: string
+  password: string
+}
+
+// 注册表单
+export interface RegisterForm {
+  username: string
+  password: string
+  email?: string
+}
+
+// 登录响应
+export interface LoginResponse {
+  access_token: string
+  user: User
 }
 
 // 创建物品表单
@@ -125,13 +182,6 @@ export interface StatsData {
     name: string
     count: number
   }[]
-}
-
-// API 响应接口
-export interface ApiResponse<T = any> {
-  data: T
-  message?: string
-  success?: boolean
 }
 
 // 分页参数

@@ -7,6 +7,8 @@ export class AdminService {
 
   // 获取用户统计信息
   async getUserStats() {
+    console.log(`📊 [AdminService.getUserStats] 开始获取用户统计信息`);
+    
     const totalUsers = await this.prisma.user.count();
     const activeUsers = await this.prisma.user.count({
       where: { isActive: true },
@@ -55,7 +57,7 @@ export class AdminService {
       return acc;
     }, {} as Record<string, number>);
 
-    return {
+    const stats = {
       totalUsers,
       activeUsers,
       inactiveUsers,
@@ -66,10 +68,15 @@ export class AdminService {
       recentUsers,
       dailyStats,
     };
+
+    console.log(`✅ [AdminService.getUserStats] 用户统计信息获取成功`, { totalUsers, activeUsers, inactiveUsers });
+    return stats;
   }
 
   // 获取用户列表
   async getUsers(page: number = 1, limit: number = 10, search?: string) {
+    console.log(`🔍 [AdminService.getUsers] 获取用户列表`, { page, limit, search });
+    
     const skip = (page - 1) * limit;
     
     const where = search ? {
@@ -98,7 +105,7 @@ export class AdminService {
       this.prisma.user.count({ where }),
     ]);
 
-    return {
+    const result = {
       users,
       pagination: {
         page,
@@ -107,25 +114,34 @@ export class AdminService {
         totalPages: Math.ceil(total / limit),
       },
     };
+
+    console.log(`✅ [AdminService.getUsers] 用户列表获取成功 - 找到 ${users.length} 个用户，总计 ${total} 个`);
+    return result;
   }
 
   // 更新用户状态
   async updateUserStatus(userId: number, isActive: boolean, currentUserId: number) {
+    console.log(`🔄 [AdminService.updateUserStatus] 更新用户状态`, { userId, isActive, currentUserId });
+    
     // 防止用户禁用自己
     if (userId === currentUserId) {
+      console.error(`❌ [AdminService.updateUserStatus] 操作失败 - 不能禁用自己的账户`);
       throw new ForbiddenException('不能禁用自己的账户');
     }
 
     // 防止禁用其他超级管理员
+    console.log(`🔍 [AdminService.updateUserStatus] 检查目标用户角色 - 用户ID: ${userId}`);
     const targetUser = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (targetUser?.role === 'SUPER_ADMIN') {
+      console.error(`❌ [AdminService.updateUserStatus] 操作失败 - 不能禁用超级管理员账户`);
       throw new ForbiddenException('不能禁用超级管理员账户');
     }
 
-    return this.prisma.user.update({
+    console.log(`💾 [AdminService.updateUserStatus] 开始更新用户状态到数据库 - 用户ID: ${userId}`);
+    const result = await this.prisma.user.update({
       where: { id: userId },
       data: { isActive },
       select: {
@@ -138,16 +154,23 @@ export class AdminService {
         createdAt: true,
       },
     });
+
+    console.log(`✅ [AdminService.updateUserStatus] 用户状态更新成功 - 用户: ${result.username}, 状态: ${isActive ? '激活' : '禁用'}`);
+    return result;
   }
 
   // 更新用户角色
   async updateUserRole(userId: number, role: string, currentUserId: number) {
+    console.log(`👤 [AdminService.updateUserRole] 更新用户角色`, { userId, role, currentUserId });
+    
     // 防止用户修改自己的角色
     if (userId === currentUserId) {
+      console.error(`❌ [AdminService.updateUserRole] 操作失败 - 不能修改自己的角色`);
       throw new ForbiddenException('不能修改自己的角色');
     }
 
-    return this.prisma.user.update({
+    console.log(`💾 [AdminService.updateUserRole] 开始更新用户角色到数据库 - 用户ID: ${userId}`);
+    const result = await this.prisma.user.update({
       where: { id: userId },
       data: { role: role as any },
       select: {
@@ -160,31 +183,45 @@ export class AdminService {
         createdAt: true,
       },
     });
+
+    console.log(`✅ [AdminService.updateUserRole] 用户角色更新成功 - 用户: ${result.username}, 新角色: ${role}`);
+    return result;
   }
 
   // 删除用户
   async deleteUser(userId: number, currentUserId: number) {
+    console.log(`🗑️ [AdminService.deleteUser] 删除用户`, { userId, currentUserId });
+    
     // 防止用户删除自己
     if (userId === currentUserId) {
+      console.error(`❌ [AdminService.deleteUser] 操作失败 - 不能删除自己的账户`);
       throw new ForbiddenException('不能删除自己的账户');
     }
 
     // 防止删除其他超级管理员
+    console.log(`🔍 [AdminService.deleteUser] 检查目标用户角色 - 用户ID: ${userId}`);
     const targetUser = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (targetUser?.role === 'SUPER_ADMIN') {
+      console.error(`❌ [AdminService.deleteUser] 操作失败 - 不能删除超级管理员账户`);
       throw new ForbiddenException('不能删除超级管理员账户');
     }
 
-    return this.prisma.user.delete({
+    console.log(`💾 [AdminService.deleteUser] 开始删除用户 - 用户ID: ${userId}`);
+    const result = await this.prisma.user.delete({
       where: { id: userId },
     });
+
+    console.log(`✅ [AdminService.deleteUser] 用户删除成功 - 用户: ${targetUser?.username}, ID: ${userId}`);
+    return result;
   }
 
   // 获取系统统计信息
   async getSystemStats() {
+    console.log(`📊 [AdminService.getSystemStats] 开始获取系统统计信息`);
+    
     const [userCount, itemCount, categoryCount, tagCount] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.item.count(),
@@ -192,11 +229,14 @@ export class AdminService {
       this.prisma.tag.count(),
     ]);
 
-    return {
+    const stats = {
       userCount,
       itemCount,
       categoryCount,
       tagCount,
     };
+
+    console.log(`✅ [AdminService.getSystemStats] 系统统计信息获取成功`, stats);
+    return stats;
   }
 } 

@@ -92,6 +92,8 @@ export class UploadService {
 
   private async setBucketPolicy() {
     try {
+      console.log(`🔐 [UploadService.setBucketPolicy] 开始设置bucket策略 - bucket: ${this.bucketName}`);
+      
       // 设置 bucket 为公开读取策略（可选）
       const policy = {
         Version: '2012-10-17',
@@ -114,7 +116,14 @@ export class UploadService {
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
+    console.log(`📤 [UploadService.uploadFile] 开始上传文件`, {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
     if (!file) {
+      console.error(`❌ [UploadService.uploadFile] 上传失败 - 未提供文件`);
       throw new BadRequestException('未提供文件');
     }
 
@@ -127,12 +136,14 @@ export class UploadService {
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
+      console.error(`❌ [UploadService.uploadFile] 上传失败 - 不支持的文件类型: ${file.mimetype}`);
       throw new BadRequestException('不支持的文件类型，仅支持图片文件');
     }
 
     // 验证文件大小 (5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
+      console.error(`❌ [UploadService.uploadFile] 上传失败 - 文件过大: ${file.size} bytes`);
       throw new BadRequestException('文件大小不能超过 5MB');
     }
 
@@ -142,6 +153,8 @@ export class UploadService {
       const fileName = `${uuidv4()}.${fileExtension}`;
       const objectName = `images/${fileName}`;
 
+      console.log(`🔄 [UploadService.uploadFile] 调用MinIO接口上传文件 - objectName: ${objectName}`);
+      
       // 上传文件到 MinIO
       await this.minioClient.putObject(
         this.bucketName,
@@ -153,6 +166,10 @@ export class UploadService {
         },
       );
 
+      console.log(`✅ [UploadService.uploadFile] MinIO上传成功 - objectName: ${objectName}`);
+
+      console.log(`🔗 [UploadService.uploadFile] 调用MinIO接口生成访问URL - objectName: ${objectName}`);
+      
       // 返回文件访问 URL
       const fileUrl = await this.minioClient.presignedGetObject(
         this.bucketName,
@@ -160,31 +177,47 @@ export class UploadService {
         24 * 60 * 60, // 24小时有效期
       );
 
+      console.log(`✅ [UploadService.uploadFile] 文件上传完成 - URL: ${fileUrl}`);
       return fileUrl;
     } catch (error) {
-      console.error('文件上传失败:', error);
+      console.error('❌ [UploadService.uploadFile] 文件上传失败:', error);
       throw new BadRequestException('文件上传失败');
     }
   }
 
   async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
+    console.log(`📤 [UploadService.uploadMultipleFiles] 开始批量上传文件 - 文件数量: ${files?.length || 0}`);
+    
     if (!files || files.length === 0) {
+      console.error(`❌ [UploadService.uploadMultipleFiles] 批量上传失败 - 未提供文件`);
       throw new BadRequestException('未提供文件');
     }
 
-    const uploadPromises = files.map((file) => this.uploadFile(file));
-    return Promise.all(uploadPromises);
+    console.log(`🔄 [UploadService.uploadMultipleFiles] 开始并行上传 ${files.length} 个文件`);
+    const uploadPromises = files.map((file, index) => {
+      console.log(`📁 [UploadService.uploadMultipleFiles] 准备上传第 ${index + 1} 个文件: ${file.originalname}`);
+      return this.uploadFile(file);
+    });
+    
+    const results = await Promise.all(uploadPromises);
+    console.log(`✅ [UploadService.uploadMultipleFiles] 批量上传完成 - 成功上传 ${results.length} 个文件`);
+    return results;
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
+    console.log(`🗑️ [UploadService.deleteFile] 开始删除文件 - URL: ${fileUrl}`);
+    
     try {
       // 从 URL 中提取对象名称
       const url = new URL(fileUrl);
       const objectName = url.pathname.substring(1); // 移除开头的 '/'
 
+      console.log(`🔄 [UploadService.deleteFile] 调用MinIO接口删除文件 - objectName: ${objectName}`);
       await this.minioClient.removeObject(this.bucketName, objectName);
+      
+      console.log(`✅ [UploadService.deleteFile] 文件删除成功 - objectName: ${objectName}`);
     } catch (error) {
-      console.error('文件删除失败:', error);
+      console.error('❌ [UploadService.deleteFile] 文件删除失败:', error);
       throw new BadRequestException('文件删除失败');
     }
   }

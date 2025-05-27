@@ -8,6 +8,7 @@ import 'uno.css'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth'
 
 // 全局样式
 import './styles/global.css'
@@ -19,8 +20,13 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
+
+// 初始化认证状态
+const authStore = useAuthStore()
+authStore.initAuth()
 
 app.mount('#app') 

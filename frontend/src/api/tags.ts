@@ -1,31 +1,27 @@
 import api from './index'
-import type { Tag, CreateTagForm } from '@/types'
+import type { Tag, CreateTagForm, UpdateTagForm } from '@/types'
 
 // 获取标签列表
-export const getTags = async (): Promise<Tag[]> => {
-  const response = await api.get<Tag[]>('/tags')
-  return response.data
+export const getTags = (): Promise<Tag[]> => {
+  return api.get('/tags')
 }
 
 // 获取单个标签
-export const getTag = async (id: number): Promise<Tag> => {
-  const response = await api.get<Tag>(`/tags/${id}`)
-  return response.data
+export const getTag = (id: number): Promise<Tag> => {
+  return api.get(`/tags/${id}`)
 }
 
 // 创建标签
-export const createTag = async (data: CreateTagForm): Promise<Tag> => {
-  const response = await api.post<Tag>('/tags', data)
-  return response.data
+export const createTag = (data: CreateTagForm): Promise<Tag> => {
+  return api.post('/tags', data)
 }
 
 // 更新标签
-export const updateTag = async (id: number, data: Partial<CreateTagForm>): Promise<Tag> => {
-  const response = await api.patch<Tag>(`/tags/${id}`, data)
-  return response.data
+export const updateTag = (id: number, data: UpdateTagForm): Promise<Tag> => {
+  return api.put(`/tags/${id}`, data)
 }
 
 // 删除标签
-export const deleteTag = async (id: number): Promise<void> => {
-  await api.delete(`/tags/${id}`)
+export const deleteTag = (id: number): Promise<void> => {
+  return api.delete(`/tags/${id}`)
 } 
